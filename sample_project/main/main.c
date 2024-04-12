@@ -21,33 +21,50 @@
 #define ESP_INTR_FLAG_DEFAULT 0
 
 static QueueHandle_t gpio_evt_queue = NULL;
+// static const char* TAG_INFO = "System Info"; // O asterístico é pra declarar como ponteiro? Sim
+static const char* TAG_GPIO_INFO = "GPIOs Info"; // O asterístico é pra declarar como ponteiro? Sim
 
-// INTERRUPÇÃO
+int stateOfOutput = 0; // Variável auxiliar para salvar o estado lógico do LED
+
+// Configuração da interrupção
 static void IRAM_ATTR gpio_isr_handler(void* arg) // Quando tiver IRAM é uma interrupção 
 {
     uint32_t gpio_num = (uint32_t) arg;
     xQueueSendFromISR(gpio_evt_queue, &gpio_num, NULL); // ISR = Interrupt service routine
 }
 
-// ENVIO DE TASK PRA FILA
+// Envio de task (tarefa) para a fila de execução
 static void gpio_task_auxiliar(void* arg) // É uma tarefa (task) -> Tem "cara" de função e tem loop infinito
-{
+{   
     uint32_t io_num;
     for (;;) {
+        // Verifica se a interrupção foi chamada devido ao acionamento de algum botão
         if (xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
-           // printf("GPIO[%"PRIu32"] intr, val: %d\n", io_num, gpio_get_level(io_num));
 
-        ESP_LOGI(TAG_GPIO_INFO, "Botão acionado: GPIO[%"PRIu32"] - Estado: %d\n", io_num, gpio_get_level(io_num));
-        
+            // ESP_LOGI informa na tela os dados requeridos
+            ESP_LOGI(TAG_GPIO_INFO, "Botão acionado: GPIO[%"PRIu32"] - Estado: %d\n", io_num, gpio_get_level(io_num));
+            
+            if(io_num == GPIO_INPUT_IO_0){ // Se o botão 1 é acionado , o led acende (1)
+                gpio_set_level(GPIO_OUTPUT_IO_0, 1); // Seta o nível lógico do led para "1"
+                stateOfOutput = 1; // Atualiza o valor da variável auxiliar
+            } else if(io_num == GPIO_INPUT_IO_1){ // Se o botão 2 é acionado , o led apaga (0)
+                gpio_set_level(GPIO_OUTPUT_IO_0, 0); // Seta o nível lógico do led para "0"
+                stateOfOutput = 0; // Atualiza o valor da variável auxiliar
+            } else if (io_num == GPIO_INPUT_IO_2){ // Se o botão 3 é acionado , o led altera seu valor lógico
+                if(stateOfOutput==1){ 
+                    gpio_set_level(GPIO_OUTPUT_IO_0, 0); // Seta o nível lógico do led para "0"
+                    stateOfOutput=0; // Atualiza o valor da variável auxiliar
+                } else {
+                    gpio_set_level(GPIO_OUTPUT_IO_0, 1); // Seta o nível lógico do led para "1"
+                    stateOfOutput=1; // Atualiza o valor da variável auxiliar
+                }
+            } 
         }
     }
 }
 
-static const char* TAG_INFO = "System Info"; // O asterístico é pra declarar como ponteiro? Sim
-static const char* TAG_GPIO_INFO = "GPIOs Info"; // O asterístico é pra declarar como ponteiro? Sim
-
 void app_main(void){
-    /*
+    /* -------------------------------------- AULA 1 - 22/03/2024 ---------------------------------------
     esp_log_level_set(TAG_INFO, ESP_LOG_INFO); // Essa função e o ESP_LOG_INFO estão dentro de uma biblioteca
 
     // Print chip information 
@@ -67,9 +84,9 @@ void app_main(void){
     unsigned minor_rev = chip_info.revision % 100;
 
     ESP_LOGI(TAG_INFO, "silicon revision v%d.%d, ", major_rev, minor_rev);
-    */
-
-    // --------------------------------------- AULA 2 -------------------------------------------- //
+    -------------------------------------- FIM AULA 1 - 22/03/2024 --------------------------------------- */
+    
+    // -------------------------------------- AULA 2 - 04/05/2024 --------------------------------------- 
 
     // CONFIGURANDO A SAÍDA
     //zero-initialize the config structure.
@@ -117,5 +134,4 @@ void app_main(void){
     while (1) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
-
 }
