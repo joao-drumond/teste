@@ -192,7 +192,6 @@ void app_main(void){
     unsigned minor_rev = chip_info.revision % 100;
 
     ESP_LOGI(TAG_INFO, "silicon revision v%d.%d, ", major_rev, minor_rev);
-    // -------------------------------------- FIM AULA 1 - 22/03/2024 --------------------------------------- 
     
     // -------------------------------------- AULA 2 - 04/05/2024 --------------------------------------- 
 
